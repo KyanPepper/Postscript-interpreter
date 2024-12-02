@@ -135,7 +135,7 @@ def test_not(interpreter):
     assert interpreter.stack == [True]
 
 def test_true_false(interpreter):
-    interpreter.execute(["true", "false"])
+    interpreter.execute(["True", "False"])
     assert interpreter.stack == [True, False]
 
 def test_print(interpreter, capsys):

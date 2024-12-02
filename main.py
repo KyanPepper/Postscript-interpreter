@@ -15,9 +15,9 @@ class PostScriptInterpreter:
                 self.stack.append(command[1:])  # Store key without `/`
             elif command.isdigit() or (command[0] == '-' and command[1:].isdigit()):
                 self.stack.append(int(command))
-            elif command == "true":
+            elif command == "True":
                 self.stack.append(True)
-            elif command == "false":
+            elif command == "False":
                 self.stack.append(False)
             else:
                 for d in reversed(self.dict_stack):
