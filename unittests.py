@@ -94,8 +94,9 @@ def test_dict(interpreter):
     assert interpreter.stack == [{}]
 
 def test_length(interpreter):
-    interpreter.execute(["1", "2", "3", "length"])
+    interpreter.execute(["[1,2,3]", "length"])
     assert interpreter.stack == [3]
+
 
 def test_def_and_lookup_dynamic():
     interpreter = PostScriptInterpreter(use_lexical_scoping=False)

@@ -1,8 +1,11 @@
+import ast  
 class PostScriptInterpreter:
     def __init__(self, use_lexical_scoping=False):
         self.stack = []
         self.dict_stack = [{}]
         self.use_lexical_scoping = use_lexical_scoping
+
+    
 
     def execute(self, command):
         if isinstance(command, list):
@@ -12,7 +15,7 @@ class PostScriptInterpreter:
             if command in self.commands():
                 self.commands()[command]()
             elif command.startswith("/"):
-                self.stack.append(command[1:])  # Store key without `/`
+                self.stack.append(command[1:])  # Store key without `/` for as a definition
             elif command.isdigit() or (command[0] == '-' and command[1:].isdigit()):
                 self.stack.append(int(command))
             elif command == "True":
@@ -20,13 +23,23 @@ class PostScriptInterpreter:
             elif command == "False":
                 self.stack.append(False)
             else:
-                value = self.lookup(command)
-                if value is not None:
-                    self.stack.append(value)
-                else:
-                    self.stack.append(command)
+                # Check if the string can be safely parsed as a list or other literal 
+                # found https://stackoverflow.com/questions/52232742/how-to-use-ast-literal-eval-in-a-pandas-dataframe-and-handle-exceptions/56842372
+                try:
+                    value = ast.literal_eval(command)
+                    if isinstance(command, (list, str)):
+                        self.stack.append(value)
+                    else:
+                        self.stack.append(command)
+                except (ValueError, SyntaxError):
+                    value = self.lookup(command)
+                    if value is not None:
+                        self.stack.append(value)
+                    else:
+                        self.stack.append(command)
         else:
             self.stack.append(command)
+
 
     # Resolves a variable name to its value considering scoping type
     def lookup(self, name):
@@ -204,7 +217,7 @@ class PostScriptInterpreter:
             raise IndexError("Stack underflow: not enough elements to compare")
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a > b)
-
+        
     def lt(self):
         if len(self.stack) < 2:
             raise IndexError("Stack underflow: not enough elements to compare")
