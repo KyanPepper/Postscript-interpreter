@@ -1,0 +1,10 @@
+Running Tests
+To run the tests, you need to set up a Python virtual environment on your Mac. Follow these steps:
+
+Run shell script setup.sh to set up the virtual environment and install the required packages.
+add shell script to permissions if not chmod +x setup.sh
+
+run pytest 
+```
+pytest tests.py
+```

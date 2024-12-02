@@ -227,12 +227,5 @@ class PostScriptInterpreter:
             "print": self.print_,
             "=": self.eq_,
         }
+    
 
-if __name__ == "__main__":
-    # Create an instance of the interpreter with dynamic scoping and execute a series of commands
-    interpreter_dynamic = PostScriptInterpreter(use_lexical_scoping=False)
-    interpreter_dynamic.execute(["/x", "10", "def", "x", "print"])  # Should print 10
-
-    # Create an instance of the interpreter with lexical scoping and execute a series of commands
-    interpreter_lexical = PostScriptInterpreter(use_lexical_scoping=True)
-    interpreter_lexical.execute(["/x", "10", "def", "x", "print"])  # Should print 10
