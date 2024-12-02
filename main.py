@@ -5,8 +5,6 @@ class PostScriptInterpreter:
         self.dict_stack = [{}]
         self.use_lexical_scoping = use_lexical_scoping
 
-    
-
     def execute(self, command):
         if isinstance(command, list):
             for cmd in command:
@@ -88,14 +86,6 @@ class PostScriptInterpreter:
         if not self.stack:
             raise IndexError("Stack underflow: no elements to pop")
         self.stack.pop()
-
-    def copy(self):
-        if not self.stack:
-            raise IndexError("Stack underflow: no elements to copy")
-        n = self.stack.pop()
-        if not isinstance(n, int) or n < 0:
-            raise TypeError("Invalid argument: 'copy' requires a non-negative integer")
-        self.stack.extend(self.stack[-n:])
 
     def dup(self):
         if not self.stack:
@@ -256,6 +246,118 @@ class PostScriptInterpreter:
             print("Stack is empty")
         print(self.stack.pop())
 
+
+    
+    def ifelse(self):
+        if len(self.stack) < 3:
+            raise IndexError("Stack underflow: not enough elements for 'ifelse'")
+        false_block, true_block, condition = self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if condition:
+            self.execute(true_block)
+        else:
+            self.execute(false_block)
+
+    def copy(self):
+        if not self.stack:
+            raise IndexError("Stack underflow: no elements to copy")
+        n = self.stack.pop()
+        if not isinstance(n, int) or n < 0:
+            raise TypeError("Invalid argument: 'copy' requires a non-negative integer")
+        if n > len(self.stack):
+            raise IndexError("Stack underflow: not enough elements to copy")
+        # Copy the top n elements onto the stack
+        self.stack.extend(self.stack[-n:])
+    def get(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'get'")
+        index, container = self.stack.pop(), self.stack.pop()
+        if isinstance(container, (str, list)):
+            self.stack.append(container[index])
+        else:
+            raise TypeError("Invalid type for 'get': expected string or list")
+
+    def getinterval(self):
+        if len(self.stack) < 3:
+            raise IndexError("Stack underflow: not enough elements for 'getinterval'")
+        count, index, container = self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if isinstance(container, str):
+            self.stack.append(container[index:index + count])
+        elif isinstance(container, list):
+            self.stack.append(container[index:index + count])
+        else:
+            raise TypeError("Invalid type for 'getinterval': expected string or list")
+
+    def putinterval(self):
+        if len(self.stack) < 3:
+            raise IndexError("Stack underflow: not enough elements for 'putinterval'")
+        substring, index, container = self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if isinstance(container, str):
+            container = list(container)  # Strings are immutable, so we convert to list for modification
+            container[index:index + len(substring)] = list(substring)
+            self.stack.append(''.join(container))  # Convert back to string
+        elif isinstance(container, list):
+            container[index:index + len(substring)] = substring
+            self.stack.append(container)
+        else:
+            raise TypeError("Invalid type for 'putinterval': expected string or list")
+
+    def for_(self):
+        if len(self.stack) < 4:
+            raise IndexError("Stack underflow: not enough elements for 'for'")
+        proc, end, step, start = self.stack.pop(), self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if not callable(proc):
+            raise TypeError("Invalid type for 'for': procedure must be callable")
+        for i in range(start, end + 1, step):
+            self.stack.append(i)
+            self.execute(proc)
+
+    def repeat(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'repeat'")
+        proc, count = self.stack.pop(), self.stack.pop()
+        if not callable(proc):
+            raise TypeError("Invalid type for 'repeat': procedure must be callable")
+        for _ in range(count):
+            self.execute(proc)
+
+    def quit(self):
+        raise SystemExit("PostScript interpreter terminated by 'quit' command")
+
+    def eq(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'eq'")
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a == b)
+
+    def ne(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'ne'")
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a != b)
+
+    def ge(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'ge'")
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a >= b)
+
+    def le(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'le'")
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a <= b)
+
+    def print_(self):
+        if not self.stack:
+            print("Stack is empty")
+        print(self.stack.pop())
+
+    def eq(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'eq'")
+        b, a = self.stack.pop(), self.stack.pop()
+        self.stack.append(a == b)
+
     def commands(self):
         return {
             "exch": self.exch,
@@ -284,11 +386,20 @@ class PostScriptInterpreter:
             "eq": self.eq,
             "ne": self.ne,
             "gt": self.gt,
+            "ge": self.ge,
             "lt": self.lt,
+            "le": self.le,
             "and": self.and_,
             "or": self.or_,
             "not": self.not_,
             "true": self.true,
             "false": self.false,
+            "get": self.get,
+            "getinterval": self.getinterval,
+            "putinterval": self.putinterval,
+            "ifelse": self.ifelse,
+            "for": self.for_,
+            "repeat": self.repeat,
+            "quit": self.quit,
             "print": self.print_,
         }
