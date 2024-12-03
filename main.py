@@ -246,6 +246,13 @@ class PostScriptInterpreter:
             print("Stack is empty")
         print(self.stack.pop())
 
+    def if_(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'if'")
+        block, condition = self.stack.pop(), self.stack.pop()
+        if condition:
+            self.execute(block)
+
 
     
     def ifelse(self):
@@ -398,6 +405,7 @@ class PostScriptInterpreter:
             "getinterval": self.getinterval,
             "putinterval": self.putinterval,
             "ifelse": self.ifelse,
+            "if": self.if_,
             "for": self.for_,
             "repeat": self.repeat,
             "quit": self.quit,
