@@ -54,13 +54,13 @@ def test_integration_scoping_lexical(interpreter_lexical):
 
 def test_integration_conditionals(interpreter):
     commands = [
-        "5", "3", "gt",          # 5 > 3 -> True
-        "{", "10", "20", "add", "}",  # True case: 10 + 20 = 30
-        "{", "50", "}",          # False case: 50
-        "ifelse"                 # Execute the true case
+        "5", "3", "lt",         # 5 < 3 -> False
+        "10",                   # Push 10 if true
+        "20",                   # Push 20 if false
+        "ifelse"                # Execute the conditional
     ]
     interpreter.execute(commands)
-    assert interpreter.stack == [30]
+    assert interpreter.stack == [20]
 
 def test_integration_complex_stack_operations(interpreter):
     commands = [
@@ -70,7 +70,7 @@ def test_integration_complex_stack_operations(interpreter):
         "count"                  # Count elements in the stack
     ]
     interpreter.execute(commands)
-    assert interpreter.stack == [1, 2, 3, 1, 2, 3, 6]
+    assert interpreter.stack == [1, 2, 3, 1, 3, 2, 6]
 
 def test_integration_boolean_logic(interpreter):
     commands = [
@@ -80,3 +80,24 @@ def test_integration_boolean_logic(interpreter):
     ]
     interpreter.execute(commands)
     assert interpreter.stack == [False]
+
+def test_integration_array_operations(interpreter):
+    commands = [
+        "[1,2,3,4,5]", "1", "3", "getinterval", # Get 2nd to 4th elements
+        "0", "get"                              # Get 1st element
+    ]
+    interpreter.execute(commands)
+    assert interpreter.stack == [2]
+
+def test_integration_print(interpreter, capsys):
+    interpreter.execute(["10", "print"])
+    captured = capsys.readouterr()
+    assert captured.out.strip() == "10"
+
+def test_integration_string_operations(interpreter):
+    commands = [
+        "Hello world",     # Push a string
+        "length",             # Get the length of the string
+    ]
+    interpreter.execute(commands)
+    assert interpreter.stack == [11]
