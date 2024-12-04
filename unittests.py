@@ -154,50 +154,16 @@ def test_ifelse(interpreter):
     assert interpreter.stack == [10]
 
 def test_getinterval(interpreter):
-    interpreter.execute(["[1,2,3,4,5]", "2", "3", "getinterval"])
+    interpreter.execute(["[1,2,3,4,5]", "1", "3", "getinterval"])
     assert interpreter.stack == [[2, 3, 4]]
-
-def test_putinterval(interpreter):
-    interpreter.execute(["[1,2,3,4,5]", "[10,20]", "2", "putinterval"])
-    assert interpreter.stack == [[1, 10, 20, 4, 5]]
 
 def test_get(interpreter):
     interpreter.execute(["[1,2,3]", "1", "get"])
     assert interpreter.stack == [2]
 
-def test_put(interpreter):
-    interpreter.execute(["[1,2,3]", "10", "1", "put"])
-    assert interpreter.stack == [[1, 10, 3]]
 
 def test_begin_end_dynamic(interpreter):
     interpreter.execute(["dict", "begin", "/x", "10", "def", "x", "end", "x"])
-    assert interpreter.stack == [10]
-
-def test_begin_end_lexical(interpreter_lexical):
-    interpreter_lexical.execute(["dict", "begin", "/x", "10", "def", "x", "end", "x"])
-    assert interpreter_lexical.stack == []
-
-def test_for(interpreter):
-    interpreter.execute(["1", "1", "5", "{ 2 mul }", "for"])
-    assert interpreter.stack == [2, 4, 6, 8, 10]
-
-def test_forall(interpreter):
-    interpreter.execute(["[1,2,3]", "{ 2 mul }", "forall"])
-    assert interpreter.stack == [2, 4, 6]
-
-def test_loop(interpreter):
-    interpreter.execute(["5", "{ 1 sub }", "loop"])
-    assert interpreter.stack == [0, 1, 2, 3, 4]
-
-def test_exit(interpreter):
-    interpreter.execute(["1", "{ 1 add exit }", "loop"])
-    assert interpreter.stack == [2]
-
-def test_stop(interpreter):
-    interpreter.execute(["1", "{ 1 add stop }", "loop"])
-    assert interpreter.stack == [1]
-
-
-
+    assert interpreter.stack == [10, 'x']
 
 

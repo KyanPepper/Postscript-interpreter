@@ -42,13 +42,12 @@ class PostScriptInterpreter:
     # Resolves a variable name to its value considering scoping type
     def lookup(self, name):
         if self.use_lexical_scoping:
-            # For lexical scoping, search from the innermost to the outermost scope
-            for d in reversed(self.dict_stack):
-                if name in d:
-                    return d[name]
+            # For lexical scoping, search in the current scope only
+            if name in self.dict_stack[-1]:
+                return self.dict_stack[-1][name]
         else:
             # For dynamic scoping, search from the outermost to the innermost scope
-            for d in self.dict_stack:
+            for d in reversed(self.dict_stack):
                 if name in d:
                     return d[name]
         return None
@@ -274,6 +273,7 @@ class PostScriptInterpreter:
             raise IndexError("Stack underflow: not enough elements to copy")
         # Copy the top n elements onto the stack
         self.stack.extend(self.stack[-n:])
+        
     def get(self):
         if len(self.stack) < 2:
             raise IndexError("Stack underflow: not enough elements for 'get'")
@@ -308,15 +308,6 @@ class PostScriptInterpreter:
         else:
             raise TypeError("Invalid type for 'putinterval': expected string or list")
 
-    def for_(self):
-        if len(self.stack) < 4:
-            raise IndexError("Stack underflow: not enough elements for 'for'")
-        proc, end, step, start = self.stack.pop(), self.stack.pop(), self.stack.pop(), self.stack.pop()
-        if not callable(proc):
-            raise TypeError("Invalid type for 'for': procedure must be callable")
-        for i in range(start, end + 1, step):
-            self.stack.append(i)
-            self.execute(proc)
 
     def repeat(self):
         if len(self.stack) < 2:
@@ -365,6 +356,47 @@ class PostScriptInterpreter:
         b, a = self.stack.pop(), self.stack.pop()
         self.stack.append(a == b)
 
+    def put(self):
+        if len(self.stack) < 3:
+            raise IndexError("Stack underflow: not enough elements for 'put'")
+        value, index, container = self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if isinstance(container, list):
+            if 0 <= index < len(container):
+                container[index] = value
+            else:
+                raise IndexError("Index out of range for 'put'")
+            self.stack.append(container)
+        elif isinstance(container, str):
+            container = list(container)
+            container[index] = value
+            self.stack.append(''.join(container))
+        else:
+            raise TypeError("Invalid type for 'put': expected list or string")
+        
+    def forall(self):
+        if len(self.stack) < 2:
+            raise IndexError("Stack underflow: not enough elements for 'forall'")
+        proc, container = self.stack.pop(), self.stack.pop()
+        if not callable(proc):
+            raise TypeError("Invalid type for 'forall': procedure must be callable")
+        if isinstance(container, (str, list)):
+            for item in container:
+                self.stack.append(item)
+                self.execute(proc)
+        else:
+            raise TypeError("Invalid type for 'forall': expected string or list")
+        
+    def for_(self): 
+        if len(self.stack) < 4:
+            raise IndexError("Stack underflow: not enough elements for 'for'")
+        proc, end, step, start = self.stack.pop(), self.stack.pop(), self.stack.pop(), self.stack.pop()
+        if not callable(proc):
+            raise TypeError("Invalid type for 'for': procedure must be callable")
+        for i in range(start, end + 1, step):
+            self.stack.append(i)
+            self.execute(proc)
+
+
     def commands(self):
         return {
             "exch": self.exch,
@@ -404,10 +436,16 @@ class PostScriptInterpreter:
             "get": self.get,
             "getinterval": self.getinterval,
             "putinterval": self.putinterval,
+            "put": self.put,
             "ifelse": self.ifelse,
             "if": self.if_,
             "for": self.for_,
             "repeat": self.repeat,
             "quit": self.quit,
             "print": self.print_,
+            "exit": self.quit,
+            "stop": self.quit,
+            "forall": self.forall
+            
+
         }
