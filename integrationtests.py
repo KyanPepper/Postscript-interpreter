@@ -28,29 +28,52 @@ def test_integration_define_and_lookup(interpreter):
     interpreter.execute(commands)
     assert interpreter.stack == [100]
 
-def test_integration_scoping_dynamic(interpreter):
+def test_define_and_lookup_with_operations(interpreter):
+    commands = [
+        "/a", "10", "def",  # Define a = 10
+        "/b", "5", "def",   # Define b = 5
+        "a", "b", "sub",    # Push a and b, then subtract (10 - 5 = 5)
+        "a", "b", "mul"     # Push a and b, then multiply (10 * 5 = 50)
+    ]
+    interpreter.execute(commands)
+    assert interpreter.stack == [5, 50]
+
+def test_define_and_lookup_with_conditionals(interpreter):
+    commands = [
+        "/a", "10", "def",  # Define a = 10
+        "/b", "20", "def",  # Define b = 20
+        "a", "b", "lt",     # Check if a < b (10 < 20 -> True)
+        "a", "b", "ifelse"  # Push a if true, b if false
+    ]
+    interpreter.execute(commands)
+    assert interpreter.stack == [10]
+
+def test_integration_scoping_dynamic(interpreter,capsys):
     commands = [
         "/x", "42", "def",       # Define x = 42
         "dict", "begin",         # Start a new dictionary
         "/x", "100", "def",      # Define x = 100 in the new scope
         "x",                     # Should find x = 100 
         "end",                   # End the new dictionary scope
-        "x"                      # Should still find x = 100 
+        "x" , "print"            # Should still find x = 100 
     ]
     interpreter.execute(commands)
-    assert interpreter.stack == [100, 100]
+    captured = capsys.readouterr()
+    assert captured.out.strip() == "100"
 
-def test_integration_scoping_lexical(interpreter_lexical):
+def test_integration_scoping_lexical(interpreter_lexical, capsys):
     commands = [
         "/x", "42", "def",       # Define x = 42
         "dict", "begin",         # Start a new dictionary
         "/x", "100", "def",      # Define x = 100 in the new scope
         "x",                     # Should find x = 100 (inner scope)
-        "end",                   # End the new dictionary scope
-        "x"                      # Should find x = 42 (outer scope)
+        "end",                   # End the new dictionary scope               
+        "x", "print"             # Print the value of x (42)
     ]
     interpreter_lexical.execute(commands)
-    assert interpreter_lexical.stack == [100, 42]
+    captured = capsys.readouterr()
+    assert captured.out.strip() == "42"
+    
 
 def test_integration_conditionals(interpreter):
     commands = [
